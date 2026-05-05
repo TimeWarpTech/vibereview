@@ -9,23 +9,24 @@ function formatDate(d: Date | string): string {
 export function ReviewList({ reviews }: { reviews: ReviewView[] }) {
   if (reviews.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 p-6 text-center text-sm text-zinc-500">
+      <div className="review-card review-empty">
         No reviews yet. Be the first.
       </div>
     );
   }
+
   return (
-    <ul className="space-y-4">
+    <ul className="review-list">
       {reviews.map((r) => (
-        <li key={r.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <div className="flex items-center gap-3">
+        <li key={r.id} className="review-card">
+          <div className="review-card__top">
+            <div className="review-card__author">
               <StarRating value={r.rating} />
-              <span className="text-sm font-medium">{r.authorName}</span>
+              <span>{r.authorName}</span>
             </div>
-            <span className="text-xs text-zinc-500">{formatDate(r.createdAt)}</span>
+            <span className="review-card__date">{formatDate(r.createdAt)}</span>
           </div>
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.body}</p>
+          <p className="review-card__body whitespace-pre-wrap">{r.body}</p>
         </li>
       ))}
     </ul>

@@ -1,95 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { games, type Game } from "@/lib/games";
-import { slugForGame } from "@/lib/slug";
-import { aggregateByGame, type GameAggregate } from "@/lib/reviews";
+import { buildRankedGames, normalizePage, PAGE_SIZE, type BrowseSearchParams } from "@/lib/gameBrowse";
+import { safeAggregateByGame } from "@/lib/reviews";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Sort = "most_reviewed" | "top_rated" | "recent";
-
-const SORTS: ReadonlySet<Sort> = new Set(["most_reviewed", "top_rated", "recent"]);
-
-const FILTERABLE = ["genre", "engine", "made_with", "multiplayer", "mobile_ready"] as const;
-type FilterKey = (typeof FILTERABLE)[number];
-
-const EMPTY_AGG: Omit<GameAggregate, "gameUrl"> = {
-  reviewCount: 0,
-  avgRating: 0,
-  lastReviewedAt: null,
-};
-
-export type GameListItem = Game & {
-  slug: string;
-  reviewCount: number;
-  avgRating: number;
-  lastReviewedAt: string | null;
-};
-
-function matches(game: Game, filters: Partial<Record<FilterKey, string>>): boolean {
-  for (const key of FILTERABLE) {
-    const wanted = filters[key];
-    if (!wanted) continue;
-    const value = String(game[key] ?? "").toLowerCase();
-    if (key === "genre") {
-      if (!value.includes(wanted.toLowerCase())) return false;
-    } else if (value !== wanted.toLowerCase()) {
-      return false;
-    }
-  }
-  return true;
-}
-
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
-  const sortRaw = params.get("sort") ?? "most_reviewed";
-  const sort: Sort = SORTS.has(sortRaw as Sort) ? (sortRaw as Sort) : "most_reviewed";
-  const limit = Math.min(Number(params.get("limit") ?? 60), 200);
-  const skip = Math.max(Number(params.get("skip") ?? 0), 0);
-
-  const filters: Partial<Record<FilterKey, string>> = {};
-  for (const key of FILTERABLE) {
-    const v = params.get(key);
-    if (v) filters[key] = v;
-  }
-
-  let aggMap: Map<string, GameAggregate>;
-  try {
-    aggMap = await aggregateByGame();
-  } catch {
-    aggMap = new Map();
-  }
-
-  const items: GameListItem[] = games
-    .filter((g) => matches(g, filters))
-    .map((g) => {
-      const agg = aggMap.get(g.game_url) ?? { ...EMPTY_AGG, gameUrl: g.game_url };
-      return {
-        ...g,
-        slug: slugForGame(g),
-        reviewCount: agg.reviewCount,
-        avgRating: agg.avgRating,
-        lastReviewedAt: agg.lastReviewedAt ? agg.lastReviewedAt.toISOString() : null,
-      };
-    });
-
-  items.sort((a, b) => {
-    if (sort === "top_rated") {
-      if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
-      return b.reviewCount - a.reviewCount;
-    }
-    if (sort === "recent") {
-      const ax = a.lastReviewedAt ? Date.parse(a.lastReviewedAt) : 0;
-      const bx = b.lastReviewedAt ? Date.parse(b.lastReviewedAt) : 0;
-      return bx - ax;
-    }
-    if (b.reviewCount !== a.reviewCount) return b.reviewCount - a.reviewCount;
-    return b.avgRating - a.avgRating;
-  });
+  const sp: BrowseSearchParams = {
+    genre: params.getAll("genre"),
+    made_with: params.get("made_with") ?? undefined,
+    has_portal: params.get("has_portal") ?? undefined,
+    sort: params.get("sort") ?? undefined,
+    q: params.get("q") ?? undefined,
+    page: params.get("page") ?? undefined,
+  };
+  const page = normalizePage(params.get("page") ?? undefined);
+  const pageSize = Math.min(Math.max(Number(params.get("pageSize") ?? PAGE_SIZE), 1), 100);
+  const aggMap = await safeAggregateByGame();
+  const ranked = buildRankedGames(sp, aggMap);
+  const start = (page - 1) * pageSize;
+  const end = page * pageSize;
 
   return NextResponse.json({
     ok: true,
-    data: items.slice(skip, skip + limit),
-    total: items.length,
+    data: ranked.slice(start, end),
+    total: ranked.length,
+    page,
+    pageSize,
   });
 }

@@ -3,21 +3,33 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-type Props = { gameUrl: string };
+type Props = { gameUrl: string; redirectTo?: string };
+const ratingStorageKey = (gameUrl: string) => `vibereview:rating:${gameUrl}`;
 
-export function ReviewForm({ gameUrl }: Props) {
+export function ReviewForm({ gameUrl, redirectTo }: Props) {
   const router = useRouter();
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    const saved = window.localStorage.getItem(ratingStorageKey(gameUrl));
+    const parsed = Number(saved);
+    return parsed >= 1 && parsed <= 5 ? parsed : 0;
+  });
   const [body, setBody] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  function handleRatingSelect(nextRating: number) {
+    console.log("[ReviewForm] rating click", { gameUrl, nextRating });
+    setError(null);
+    setRating(nextRating);
+    window.localStorage.setItem(ratingStorageKey(gameUrl), String(nextRating));
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
-    // Honeypot — if filled, bail silently (bot).
     const form = e.currentTarget;
     const honeypot = (form.elements.namedItem("website") as HTMLInputElement | null)?.value;
     if (honeypot) return;
@@ -27,85 +39,115 @@ export function ReviewForm({ gameUrl }: Props) {
       return;
     }
 
-    const res = await fetch("/api/reviews", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ gameUrl, rating, body: body.trim(), authorName: authorName.trim() || undefined }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.ok) {
-      setError(data.error ?? "Something went wrong.");
+    if (rating < 1) {
+      setError("Pick a star rating first.");
       return;
     }
+
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ gameUrl, rating, body: body.trim(), authorName: authorName.trim() || undefined }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError(data.error ?? "Something went wrong.");
+        return;
+      }
+    } catch {
+      setError("Could not reach the reviews API.");
+      return;
+    }
+
     setBody("");
     setAuthorName("");
-    setRating(5);
     startTransition(() => router.refresh());
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
-      <h3 className="font-semibold">Write a review</h3>
+    <form onSubmit={onSubmit} method="post" action="/api/reviews" className="review-form">
+      <h3 className="review-form__header">write a review</h3>
 
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">Rating</span>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setRating(n)}
-              aria-label={`${n} star${n === 1 ? "" : "s"}`}
-              className={`text-2xl leading-none ${n <= rating ? "text-amber-500" : "text-zinc-300 dark:text-zinc-700"} hover:scale-110 transition`}
+      <div className="form-stack">
+        <input type="hidden" name="gameUrl" value={gameUrl} />
+        {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-zinc-300">Rating</span>
+          <div className="flex items-center gap-2 flex-wrap" role="radiogroup" aria-label="Rating">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handleRatingSelect(n)}
+                  aria-label={`${n} star${n === 1 ? "" : "s"}`}
+                  aria-pressed={n === rating}
+                  className={`review-rating__star ${n <= rating ? "review-rating__star--active" : "review-rating__star--inactive"} ${n === rating ? "review-rating__star--selected" : ""}`}
+                >
+                  {"\u2605"}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-zinc-400 min-w-24">
+              {rating > 0 ? `your vote: ${rating}/5` : "select"}
+            </span>
+            <select
+              name="rating"
+              value={rating}
+              onChange={(e) => handleRatingSelect(Number(e.target.value))}
+              className="retro-select w-auto min-w-28"
+              aria-label="Select rating"
             >
-              ★
-            </button>
-          ))}
+              <option value={0}>Choose</option>
+              <option value={1}>1/5</option>
+              <option value={2}>2/5</option>
+              <option value={3}>3/5</option>
+              <option value={4}>4/5</option>
+              <option value={5}>5/5</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      <input
-        type="text"
-        name="authorName"
-        value={authorName}
-        onChange={(e) => setAuthorName(e.target.value)}
-        placeholder="Your name (optional)"
-        maxLength={60}
-        className="w-full rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
-      />
+        <input
+          type="text"
+          name="authorName"
+          value={authorName}
+          onChange={(e) => setAuthorName(e.target.value)}
+          placeholder="Your name (optional)"
+          maxLength={60}
+          className="retro-input"
+        />
 
-      <textarea
-        name="body"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="What did you think?"
-        maxLength={2000}
-        rows={4}
-        required
-        className="w-full rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm resize-y"
-      />
+        <textarea
+          name="body"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="What did you think?"
+          maxLength={2000}
+          rows={5}
+          required
+          className="retro-textarea"
+        />
 
-      {/* Honeypot — hidden from users, attractive to bots */}
-      <input
-        type="text"
-        name="website"
-        tabIndex={-1}
-        autoComplete="off"
-        className="hidden"
-        aria-hidden="true"
-      />
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+          aria-hidden="true"
+        />
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {error ? <p className="form-error">{error}</p> : null}
 
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-zinc-500">{body.length}/2000</span>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-4 py-1.5 rounded bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 text-sm font-medium disabled:opacity-50"
-        >
-          {isPending ? "Posting…" : "Post review"}
-        </button>
+        <div className="form-row">
+          <span className="form-hint">{body.length}/2000</span>
+          <button type="submit" disabled={isPending} className="arcade-button arcade-button--yellow disabled:opacity-50">
+            {isPending ? "Posting..." : "Post Review"}
+          </button>
+        </div>
       </div>
     </form>
   );

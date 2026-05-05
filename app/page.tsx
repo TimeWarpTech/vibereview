@@ -20,13 +20,11 @@ function rank(games: Game[], aggMap: Awaited<ReturnType<typeof safeAggregateByGa
 }
 
 function Rail({ title, items }: { title: string; items: Ranked[] }) {
-  if (items.length === 0) {
-    return null;
-  }
+  if (items.length === 0) return null;
   return (
-    <section className="space-y-3">
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <section className="rail">
+      <h2 className="rail__heading">{title}</h2>
+      <div className="card-grid">
         {items.map((r) => (
           <GameCard
             key={r.game.game_url}
@@ -43,6 +41,14 @@ function Rail({ title, items }: { title: string; items: Ranked[] }) {
 export default async function Home() {
   const aggMap = await safeAggregateByGame();
   const ranked = rank(games, aggMap);
+  const totalReviews = ranked.reduce((sum, item) => sum + item.reviewCount, 0);
+  const reviewedGames = ranked.filter((item) => item.reviewCount > 0).length;
+  const averageScore =
+    totalReviews > 0
+      ? (
+          ranked.reduce((sum, item) => sum + item.avgRating * item.reviewCount, 0) / totalReviews
+        ).toFixed(1)
+      : "0.0";
 
   const mostReviewed = [...ranked]
     .filter((r) => r.reviewCount > 0)
@@ -62,18 +68,40 @@ export default async function Home() {
   const haveAny = mostReviewed.length > 0;
 
   return (
-    <div className="space-y-10">
-      <section className="space-y-3">
-        <h1 className="text-3xl font-bold tracking-tight">Vibe-coded games, honestly reviewed.</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl">
-          Browse {games.length.toLocaleString()} games. No login. Drop a review on anything you play.
+    <div className="page-stack">
+      <section className="hero-panel">
+        <p className="section-kicker">vibereview arcade feed</p>
+        <h1 className="pixel-heading">
+          VIBEREVIEW
+          <br />
+          GAME GRID
+        </h1>
+        <p className="hero-copy">
+          Browse {games.length.toLocaleString()} vibe-coded games, track what players actually rated, and drop an anonymous review without ceremony.
         </p>
-        <div className="pt-1">
-          <Link
-            href="/games"
-            className="inline-flex items-center px-4 py-2 rounded-md bg-zinc-900 text-white text-sm font-medium hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Browse all games →
+        <div className="hero-status">
+          <div className="status-banner">Reviews Online</div>
+          <div className="chip-grid">
+            <div className="stat-chip">
+              <span className="stat-chip__value">{games.length.toLocaleString()}</span>
+              <span className="stat-chip__label">games indexed</span>
+            </div>
+            <div className="stat-chip">
+              <span className="stat-chip__value">{reviewedGames.toLocaleString()}</span>
+              <span className="stat-chip__label">games reviewed</span>
+            </div>
+            <div className="stat-chip">
+              <span className="stat-chip__value">{totalReviews > 0 ? averageScore : totalReviews.toLocaleString()}</span>
+              <span className="stat-chip__label">{totalReviews > 0 ? "avg score" : "reviews posted"}</span>
+            </div>
+          </div>
+        </div>
+        <div className="hero-actions">
+          <Link href="/games" className="arcade-button">
+            Browse Games
+          </Link>
+          <Link href="/games?sort=top_rated" className="arcade-button arcade-button--yellow">
+            Top Rated
           </Link>
         </div>
       </section>
@@ -85,9 +113,9 @@ export default async function Home() {
           <Rail title="Recently reviewed" items={recent} />
         </>
       ) : (
-        <section className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">
-            No reviews yet. <Link href="/games" className="underline">Pick a game</Link> and be the first.
+        <section className="neo-panel panel-note">
+          <p>
+            no reviews yet. <Link href="/games" style={{ color: "var(--yellow)" }} className="underline">pick a game</Link> and start the board.
           </p>
         </section>
       )}

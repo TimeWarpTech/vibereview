@@ -13,27 +13,58 @@ function clientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body." }, { status: 400 });
-  }
+    let body: unknown;
+    let redirectPath = "/games";
+    const contentType = req.headers.get("content-type") ?? "";
+    const isFormPost =
+      contentType.includes("application/x-www-form-urlencoded") ||
+      contentType.includes("multipart/form-data");
 
-  const parsed = ReviewInputSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { ok: false, error: "Invalid review.", issues: parsed.error.flatten() },
-      { status: 400 },
-    );
-  }
+    if (isFormPost) {
+      const form = await req.formData();
+      redirectPath = String(form.get("redirectTo") ?? "/games");
+      body = {
+        gameUrl: String(form.get("gameUrl") ?? ""),
+        rating: Number(form.get("rating") ?? 0),
+        body: String(form.get("body") ?? ""),
+        authorName: String(form.get("authorName") ?? "").trim() || undefined,
+      };
+    } else {
+      try {
+        body = await req.json();
+      } catch {
+        return NextResponse.json({ ok: false, error: "Invalid JSON body." }, { status: 400 });
+      }
+    }
 
-  const result = await createReview(parsed.data, clientIp(req));
-  if (!result.ok) {
-    const status = result.error.startsWith("Too many") ? 429 : 400;
-    return NextResponse.json(result, { status });
+    const parsed = ReviewInputSchema.safeParse(body);
+    if (!parsed.success) {
+      if (isFormPost) {
+        return NextResponse.redirect(new URL(redirectPath, req.nextUrl.origin), 303);
+      }
+      return NextResponse.json(
+        { ok: false, error: "Invalid review.", issues: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const result = await createReview(parsed.data, clientIp(req));
+    if (!result.ok) {
+      if (isFormPost) {
+        return NextResponse.redirect(new URL(redirectPath, req.nextUrl.origin), 303);
+      }
+      const status = result.error.startsWith("Too many") ? 429 : 400;
+      return NextResponse.json(result, { status });
+    }
+    if (isFormPost) {
+      return NextResponse.redirect(new URL(redirectPath, req.nextUrl.origin), 303);
+    }
+    return NextResponse.json({ ok: true, data: result.review }, { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unexpected server error.";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, data: result.review }, { status: 201 });
 }
 
 export async function GET(req: NextRequest) {

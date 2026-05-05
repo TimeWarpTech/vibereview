@@ -17,27 +17,29 @@ export function GameCard({ game, reviewCount, avgRating }: Props) {
   return (
     <Link
       href={`/games/${slug}`}
-      className="group flex flex-col rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 transition"
+      className="game-card group"
     >
-      <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 overflow-hidden relative">
+      <div className="game-card__media">
         {img ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={img}
             alt={`${game.game_name} screenshot`}
-            className="w-full h-full object-cover group-hover:scale-105 transition"
+            className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-400 text-sm">No image</div>
+          <div className="w-full h-full flex items-center justify-center text-xs uppercase text-[color:var(--muted)]">no image</div>
         )}
       </div>
-      <div className="p-4 flex flex-col gap-2 flex-1">
-        <h3 className="font-semibold leading-tight line-clamp-1">{game.game_name}</h3>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 flex-1">{game.pitch}</p>
-        <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
-          <span className="truncate">{game.genre}</span>
+      <div className="game-card__body">
+        <h3 className="game-card__title line-clamp-1">
+          <span className="game-card__title-accent">&gt;</span> {game.game_name}
+        </h3>
+        <p className="game-card__pitch line-clamp-2 flex-1">{game.pitch}</p>
+        <div className="game-card__meta">
+          <span className="game-card__genre truncate">[{game.genre}]</span>
           <span className="flex items-center gap-1.5 shrink-0">
             {reviewCount > 0 ? (
               <>
@@ -45,7 +47,7 @@ export function GameCard({ game, reviewCount, avgRating }: Props) {
                 <span>({reviewCount})</span>
               </>
             ) : (
-              <span className="text-zinc-400">no reviews</span>
+              <span className="opacity-60">no reviews</span>
             )}
           </span>
         </div>
