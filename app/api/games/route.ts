@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     sort: params.get("sort") ?? undefined,
     q: params.get("q") ?? undefined,
     page: params.get("page") ?? undefined,
+    min_rating: params.get("min_rating") ?? undefined,
   };
   const page = normalizePage(params.get("page") ?? undefined);
   const pageSize = Math.min(Math.max(Number(params.get("pageSize") ?? PAGE_SIZE), 1), 100);

@@ -30,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </Link>
             <nav className="site-nav">
               <Link href="/" className="site-nav__link">home</Link>
-              <Link href="/games" className="site-nav__link">browse</Link>
+              <Link href="/top-rated" className="site-nav__link">top rated</Link>
             </nav>
           </div>
         </header>

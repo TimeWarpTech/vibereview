@@ -8,9 +8,10 @@ type Props = {
   game: Game;
   reviewCount: number;
   avgRating: number;
+  rank?: number;
 };
 
-export function GameCard({ game, reviewCount, avgRating }: Props) {
+export function GameCard({ game, reviewCount, avgRating, rank }: Props) {
   const slug = slugForGame(game);
   const img = screenshotUrl(game.screenshot, 600);
 
@@ -20,6 +21,9 @@ export function GameCard({ game, reviewCount, avgRating }: Props) {
       className="game-card group"
     >
       <div className="game-card__media">
+        {typeof rank === "number" ? (
+          <span className="game-card__rank">#{rank}</span>
+        ) : null}
         {img ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img

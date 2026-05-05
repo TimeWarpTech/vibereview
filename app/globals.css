@@ -440,6 +440,25 @@ textarea {
   transform: scale(1.03);
 }
 
+.game-card__rank {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  font-family: var(--font-display, monospace);
+  font-size: 1.15rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 0.8rem;
+  color: #0b0b0b;
+  background: var(--yellow, #ffd33d);
+  border-left: 1px solid rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(255, 211, 61, 0.45),
+    0 0 16px rgba(255, 211, 61, 0.45);
+}
+
 .game-card__body {
   display: flex;
   flex: 1;

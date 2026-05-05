@@ -1,14 +1,39 @@
 import Link from "next/link";
 import { games, type Game } from "@/lib/games";
+import { getFacets } from "@/lib/facets";
+import {
+  buildRankedGames,
+  dedupeGenres,
+  getSelectedGenres,
+  normalizePage,
+  PAGE_SIZE,
+  pickFeaturedIndex,
+  type BrowseSearchParams,
+} from "@/lib/gameBrowse";
+import { slugForGame } from "@/lib/slug";
 import { safeAggregateByGame } from "@/lib/reviews";
+import { BrowseControls } from "@/components/BrowseControls";
 import { GameCard } from "@/components/GameCard";
+import { GamesInfiniteGrid } from "@/components/GamesInfiniteGrid";
 
 export const dynamic = "force-dynamic";
 
 type Ranked = { game: Game; reviewCount: number; avgRating: number; lastReviewedAt: Date | null };
 
-function rank(games: Game[], aggMap: Awaited<ReturnType<typeof safeAggregateByGame>>): Ranked[] {
-  return games.map((g) => {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<BrowseSearchParams>;
+}) {
+  const sp = await searchParams;
+  const page = normalizePage(sp.page);
+  const facets = getFacets();
+  const selectedGenres = getSelectedGenres(sp.genre);
+  const displayGenres = dedupeGenres(facets.genres);
+  const aggMap = await safeAggregateByGame();
+  const ranked = buildRankedGames(sp, aggMap);
+
+  const allRanked: Ranked[] = games.map((g) => {
     const a = aggMap.get(g.game_url);
     return {
       game: g,
@@ -17,55 +42,39 @@ function rank(games: Game[], aggMap: Awaited<ReturnType<typeof safeAggregateByGa
       lastReviewedAt: a?.lastReviewedAt ?? null,
     };
   });
-}
 
-function Rail({ title, items }: { title: string; items: Ranked[] }) {
-  if (items.length === 0) return null;
-  return (
-    <section className="rail">
-      <h2 className="rail__heading">{title}</h2>
-      <div className="card-grid">
-        {items.map((r) => (
-          <GameCard
-            key={r.game.game_url}
-            game={r.game}
-            reviewCount={r.reviewCount}
-            avgRating={r.avgRating}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export default async function Home() {
-  const aggMap = await safeAggregateByGame();
-  const ranked = rank(games, aggMap);
-  const totalReviews = ranked.reduce((sum, item) => sum + item.reviewCount, 0);
-  const reviewedGames = ranked.filter((item) => item.reviewCount > 0).length;
+  const totalReviews = allRanked.reduce((sum, item) => sum + item.reviewCount, 0);
+  const reviewedGames = allRanked.filter((item) => item.reviewCount > 0).length;
   const averageScore =
     totalReviews > 0
       ? (
-          ranked.reduce((sum, item) => sum + item.avgRating * item.reviewCount, 0) / totalReviews
+          allRanked.reduce((sum, item) => sum + item.avgRating * item.reviewCount, 0) / totalReviews
         ).toFixed(1)
       : "0.0";
 
-  const mostReviewed = [...ranked]
-    .filter((r) => r.reviewCount > 0)
-    .sort((a, b) => b.reviewCount - a.reviewCount)
-    .slice(0, 8);
-
-  const topRated = [...ranked]
+  const topRated = [...allRanked]
     .filter((r) => r.reviewCount >= 1)
     .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount)
     .slice(0, 8);
 
-  const recent = [...ranked]
-    .filter((r) => r.lastReviewedAt)
-    .sort((a, b) => (b.lastReviewedAt!.getTime()) - (a.lastReviewedAt!.getTime()))
-    .slice(0, 8);
+  const topRailItems = topRated.length > 0 ? topRated : allRanked.slice(0, 8);
 
-  const haveAny = mostReviewed.length > 0;
+  const randomGame = games[pickFeaturedIndex(JSON.stringify(sp), games.length)];
+  const randomHref = randomGame ? `/games/${slugForGame(randomGame)}` : "/";
+
+  const gridKey = JSON.stringify({
+    q: sp.q ?? "",
+    sort: sp.sort ?? "newest",
+    made_with: sp.made_with ?? "",
+    has_portal: sp.has_portal ?? "",
+    genre: selectedGenres,
+    page,
+  });
+  const initialItems = ranked.slice(0, page * PAGE_SIZE).map((item) => ({
+    game: item.game,
+    reviewCount: item.reviewCount,
+    avgRating: item.avgRating,
+  }));
 
   return (
     <div className="page-stack">
@@ -96,29 +105,64 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <div className="hero-actions">
-          <Link href="/games" className="arcade-button">
-            Browse Games
-          </Link>
-          <Link href="/games?sort=top_rated" className="arcade-button arcade-button--yellow">
-            Top Rated
-          </Link>
-        </div>
       </section>
 
-      {haveAny ? (
-        <>
-          <Rail title="Most reviewed" items={mostReviewed} />
-          <Rail title="Top rated" items={topRated} />
-          <Rail title="Recently reviewed" items={recent} />
-        </>
-      ) : (
-        <section className="neo-panel panel-note">
-          <p>
-            no reviews yet. <Link href="/games" style={{ color: "var(--yellow)" }} className="underline">pick a game</Link> and start the board.
-          </p>
-        </section>
-      )}
+      <section className="rail">
+        <header className="browse-header">
+          <div>
+            <h2 className="rail__heading">Top rated</h2>
+            <p>
+              {topRated.length > 0
+                ? "The highest-scoring games right now."
+                : "No reviews yet — be the first to rate a game."}
+            </p>
+          </div>
+          <Link href="/top-rated" className="arcade-button arcade-button--yellow">
+            See all top rated
+          </Link>
+        </header>
+        {topRailItems.length > 0 ? (
+          <div className="card-grid">
+            {topRailItems.map((r, i) => (
+              <GameCard
+                key={r.game.game_url}
+                game={r.game}
+                reviewCount={r.reviewCount}
+                avgRating={r.avgRating}
+                rank={topRated.length > 0 ? i + 1 : undefined}
+              />
+            ))}
+          </div>
+        ) : null}
+      </section>
+
+      <section id="all-games">
+        <header className="browse-header">
+          <div>
+            <h2 className="section-title">All games</h2>
+            <p>
+              {ranked.length.toLocaleString()} match{ranked.length === 1 ? "" : "es"} - loaded {initialItems.length.toLocaleString()}
+            </p>
+          </div>
+        </header>
+
+        <BrowseControls
+          action="/"
+          resetHref="/"
+          randomHref={randomHref}
+          sp={sp}
+          selectedGenres={selectedGenres}
+          displayGenres={displayGenres}
+        />
+
+        <GamesInfiniteGrid
+          key={gridKey}
+          initialItems={initialItems}
+          total={ranked.length}
+          initialPage={page}
+          pageSize={PAGE_SIZE}
+        />
+      </section>
     </div>
   );
 }

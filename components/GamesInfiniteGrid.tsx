@@ -9,6 +9,7 @@ type RankedGame = {
   game: Game;
   reviewCount: number;
   avgRating: number;
+  rank?: number;
 };
 
 type Props = {
@@ -16,9 +17,10 @@ type Props = {
   total: number;
   initialPage: number;
   pageSize: number;
+  showRank?: boolean;
 };
 
-export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize }: Props) {
+export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize, showRank = false }: Props) {
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(initialPage);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,12 +85,13 @@ export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize }
   return (
     <>
       <div className="card-grid">
-        {items.map((r) => (
+        {items.map((r, i) => (
           <GameCard
             key={r.game.game_url}
             game={r.game}
             reviewCount={r.reviewCount}
             avgRating={r.avgRating}
+            rank={showRank ? r.rank ?? i + 1 : undefined}
           />
         ))}
       </div>

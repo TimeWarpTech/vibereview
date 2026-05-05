@@ -15,7 +15,7 @@ function clientIp(req: NextRequest): string {
 export async function POST(req: NextRequest) {
   try {
     let body: unknown;
-    let redirectPath = "/games";
+    let redirectPath = "/";
     const contentType = req.headers.get("content-type") ?? "";
     const isFormPost =
       contentType.includes("application/x-www-form-urlencoded") ||
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     if (isFormPost) {
       const form = await req.formData();
-      redirectPath = String(form.get("redirectTo") ?? "/games");
+      redirectPath = String(form.get("redirectTo") ?? "/");
       body = {
         gameUrl: String(form.get("gameUrl") ?? ""),
         rating: Number(form.get("rating") ?? 0),

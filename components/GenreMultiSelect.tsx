@@ -5,9 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type Props = {
   options: string[];
   selected: string[];
+  onSelectionChange?: (next: string[]) => void;
 };
 
-export function GenreMultiSelect({ options, selected }: Props) {
+export function GenreMultiSelect({ options, selected, onSelectionChange }: Props) {
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[]>(selected);
   const [open, setOpen] = useState(false);
@@ -31,14 +32,19 @@ export function GenreMultiSelect({ options, selected }: Props) {
   }, []);
 
   function toggleGenre(value: string) {
-    setPicked((current) =>
-      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
-    );
+    setPicked((current) => {
+      const next = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+      onSelectionChange?.(next);
+      return next;
+    });
   }
 
   function clearAll() {
     setPicked([]);
     setQuery("");
+    onSelectionChange?.([]);
   }
 
   return (

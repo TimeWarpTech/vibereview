@@ -8,7 +8,23 @@ export type BrowseSearchParams = {
   sort?: string;
   q?: string;
   page?: string;
+  min_rating?: string;
 };
+
+export const MIN_RATING_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "3", label: "3+" },
+  { value: "4", label: "4+" },
+  { value: "4.5", label: "4.5+" },
+] as const;
+
+export function parseMinRating(value: string | undefined): number {
+  if (!value) return 0;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  if (n > 5) return 5;
+  return n;
+}
 
 export type RankedGame = {
   game: Game;
@@ -112,6 +128,7 @@ export function normalizePage(value: string | undefined): number {
 export function buildRankedGames(sp: BrowseSearchParams, aggMap: Map<string, GameAggregate>): RankedGame[] {
   const selectedGenres = getSelectedGenres(sp.genre);
   const sort = sp.sort ?? "newest";
+  const minRating = parseMinRating(sp.min_rating);
 
   const ranked = games
     .filter((g) => matchesFilters(g, sp, selectedGenres))
@@ -123,7 +140,8 @@ export function buildRankedGames(sp: BrowseSearchParams, aggMap: Map<string, Gam
         avgRating: a?.avgRating ?? 0,
         lastReviewedAt: a?.lastReviewedAt ?? null,
       };
-    });
+    })
+    .filter((r) => (minRating > 0 ? r.reviewCount > 0 && r.avgRating >= minRating : true));
 
   ranked.sort((a, b) => {
     if (sort === "most_reviewed") {

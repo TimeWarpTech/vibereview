@@ -47,7 +47,7 @@ export default async function GameDetail({ params }: Props) {
   return (
     <div className="page-stack">
       <nav>
-        <Link href="/games" className="site-nav__link">back to games</Link>
+        <Link href="/" className="site-nav__link">back to games</Link>
       </nav>
 
       <header className="detail-grid">
