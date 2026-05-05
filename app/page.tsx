@@ -129,7 +129,7 @@ export default async function Home({
                 game={r.game}
                 reviewCount={r.reviewCount}
                 avgRating={r.avgRating}
-                rank={topRated.length > 0 ? i + 1 : undefined}
+                rank={i + 1}
               />
             ))}
           </div>
