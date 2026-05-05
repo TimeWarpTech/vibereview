@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGameBySlug } from "@/lib/games";
 import { listReviewsForGame } from "@/lib/reviews";
-import { screenshotUrl } from "@/lib/screenshot";
 import { StarRating } from "@/components/StarRating";
 import { ReviewList } from "@/components/ReviewList";
 import { ReviewForm } from "@/components/ReviewForm";
+import { ScreenshotViewer } from "@/components/ScreenshotViewer";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,6 @@ export default async function GameDetail({ params }: Props) {
 
   const ratings = reviews.map((r) => r.rating);
   const average = avg(ratings);
-  const img = screenshotUrl(game.screenshot, 1200);
 
   return (
     <div className="page-stack">
@@ -52,17 +51,7 @@ export default async function GameDetail({ params }: Props) {
 
       <header className="detail-grid">
         <div className="detail-media">
-          {img ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={img}
-              alt={`${game.game_name} screenshot`}
-              className="w-full h-full object-cover aspect-video"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="w-full aspect-video flex items-center justify-center text-[color:var(--muted)]">No image</div>
-          )}
+          <ScreenshotViewer src={game.screenshot} alt={`${game.game_name} screenshot`} />
         </div>
 
         <div className="neo-panel detail-copy">

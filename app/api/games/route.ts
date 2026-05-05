@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const sp: BrowseSearchParams = {
     genre: params.getAll("genre"),
-    made_with: params.get("made_with") ?? undefined,
+    made_with: params.getAll("made_with"),
     has_portal: params.get("has_portal") ?? undefined,
     sort: params.get("sort") ?? undefined,
     q: params.get("q") ?? undefined,

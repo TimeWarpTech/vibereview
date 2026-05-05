@@ -85,13 +85,13 @@ export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize, 
   return (
     <>
       <div className="card-grid">
-        {items.map((r, i) => (
+        {items.map((r) => (
           <GameCard
             key={r.game.game_url}
             game={r.game}
             reviewCount={r.reviewCount}
             avgRating={r.avgRating}
-            rank={showRank ? r.rank ?? i + 1 : undefined}
+            rank={showRank ? (typeof r.rank === "number" ? r.rank : "?") : undefined}
           />
         ))}
       </div>

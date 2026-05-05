@@ -8,7 +8,7 @@ type Props = {
   game: Game;
   reviewCount: number;
   avgRating: number;
-  rank?: number;
+  rank?: number | "?";
 };
 
 export function GameCard({ game, reviewCount, avgRating, rank }: Props) {
@@ -21,7 +21,7 @@ export function GameCard({ game, reviewCount, avgRating, rank }: Props) {
       className="game-card group"
     >
       <div className="game-card__media">
-        {typeof rank === "number" ? (
+        {rank !== undefined ? (
           <span className="game-card__rank">#{rank}</span>
         ) : null}
         {img ? (
@@ -43,8 +43,13 @@ export function GameCard({ game, reviewCount, avgRating, rank }: Props) {
         </h3>
         <p className="game-card__pitch line-clamp-2 flex-1">{game.pitch}</p>
         <div className="game-card__meta">
-          <span className="game-card__genre truncate">[{game.genre}]</span>
-          <span className="flex items-center gap-1.5 shrink-0">
+          <div className="game-card__tags">
+            <span className="game-card__genre truncate">[{game.genre}]</span>
+            {game.made_with ? (
+              <span className="game-card__tool truncate">{`{${game.made_with}}`}</span>
+            ) : null}
+          </div>
+          <span className="game-card__rating shrink-0">
             {reviewCount > 0 ? (
               <>
                 <StarRating value={avgRating} />

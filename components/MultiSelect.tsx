@@ -3,16 +3,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
+  name: string;
   options: string[];
   selected: string[];
   onSelectionChange?: (next: string[]) => void;
+  placeholderAll: string;
+  formatSelected?: (count: number) => string;
+  searchPlaceholder?: string;
 };
 
-export function GenreMultiSelect({ options, selected, onSelectionChange }: Props) {
+export function MultiSelect({
+  name,
+  options,
+  selected,
+  onSelectionChange,
+  placeholderAll,
+  formatSelected = (c) => `${c} selected`,
+  searchPlaceholder = "Search...",
+}: Props) {
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[]>(selected);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const pendingNotify = useRef(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -20,37 +33,53 @@ export function GenreMultiSelect({ options, selected, onSelectionChange }: Props
     return options.filter((option) => option.toLowerCase().includes(q));
   }, [options, query]);
 
+  // Sync internal picked state when the `selected` prop changes externally
+  // (e.g. after Reset or URL-driven navigation). Skip notify on prop sync.
+  const selectedKey = selected.join("|");
+  useEffect(() => {
+    setPicked((current) => {
+      if (current.join("|") === selectedKey) return current;
+      pendingNotify.current = false;
+      return selected;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedKey]);
+
+  // Fire onSelectionChange AFTER React commits the new picked state to the
+  // DOM, so consumers reading FormData see fresh hidden inputs.
+  useEffect(() => {
+    if (!pendingNotify.current) return;
+    pendingNotify.current = false;
+    onSelectionChange?.(picked);
+  }, [picked, onSelectionChange]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function toggleGenre(value: string) {
-    setPicked((current) => {
-      const next = current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value];
-      onSelectionChange?.(next);
-      return next;
-    });
+  function toggle(value: string) {
+    pendingNotify.current = true;
+    setPicked((current) =>
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
+    );
   }
 
   function clearAll() {
+    pendingNotify.current = true;
     setPicked([]);
     setQuery("");
-    onSelectionChange?.([]);
   }
 
   return (
     <div className="genre-select" ref={rootRef}>
       {picked.map((value) => (
-        <input key={value} type="hidden" name="genre" value={value} />
+        <input key={value} type="hidden" name={name} value={value} />
       ))}
 
       <button
@@ -61,7 +90,7 @@ export function GenreMultiSelect({ options, selected, onSelectionChange }: Props
         aria-haspopup="dialog"
       >
         <span className="genre-select__trigger-label">
-          {picked.length > 0 ? `${picked.length} genre${picked.length === 1 ? "" : "s"} selected` : "All genres"}
+          {picked.length > 0 ? formatSelected(picked.length) : placeholderAll}
         </span>
         <span className="genre-select__trigger-caret">{open ? "−" : "+"}</span>
       </button>
@@ -72,7 +101,7 @@ export function GenreMultiSelect({ options, selected, onSelectionChange }: Props
             <button
               key={value}
               type="button"
-              onClick={() => toggleGenre(value)}
+              onClick={() => toggle(value)}
               className="genre-chip genre-chip--active"
             >
               {value.toUpperCase()}
@@ -90,7 +119,7 @@ export function GenreMultiSelect({ options, selected, onSelectionChange }: Props
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search genres..."
+            placeholder={searchPlaceholder}
             className="retro-input genre-select__search"
           />
 
@@ -102,7 +131,7 @@ export function GenreMultiSelect({ options, selected, onSelectionChange }: Props
                   <input
                     type="checkbox"
                     checked={active}
-                    onChange={() => toggleGenre(value)}
+                    onChange={() => toggle(value)}
                     className="genre-select__checkbox"
                   />
                   <span className="checkbox-mark" />
@@ -111,7 +140,7 @@ export function GenreMultiSelect({ options, selected, onSelectionChange }: Props
               );
             })}
             {filtered.length === 0 ? (
-              <div className="genre-select__empty">No matching genres</div>
+              <div className="genre-select__empty">No matches</div>
             ) : null}
           </div>
         </div>
