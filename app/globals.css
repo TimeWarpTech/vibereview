@@ -182,9 +182,9 @@ textarea {
 
 .hero-title-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .hero-jam-link {
