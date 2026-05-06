@@ -44,7 +44,7 @@ export function toView(doc: ReviewDoc): ReviewView {
   };
 }
 
-const RATE_LIMIT_PER_HOUR = 5;
+const REVIEWS_PER_GAME_PER_IP = 6;
 
 export async function createReview(
   input: ReviewInput,
@@ -57,13 +57,12 @@ export async function createReview(
   const reviews = await getReviewsCollection();
   const ipHash = hashIp(ip);
 
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const recent = await reviews.countDocuments({
+  const existing = await reviews.countDocuments({
     ipHash,
-    createdAt: { $gte: oneHourAgo },
+    gameUrl: input.gameUrl,
   });
-  if (recent >= RATE_LIMIT_PER_HOUR) {
-    return { ok: false, error: "Too many reviews from this network in the last hour. Try again later." };
+  if (existing >= REVIEWS_PER_GAME_PER_IP) {
+    return { ok: false, error: "Too many reviews for this game from your network." };
   }
 
   const doc: ReviewDoc = {
