@@ -14,6 +14,7 @@ import { slugForGame } from "@/lib/slug";
 import { safeAggregateByGame } from "@/lib/reviews";
 import { BrowseControls } from "@/components/BrowseControls";
 import { GamesInfiniteGrid } from "@/components/GamesInfiniteGrid";
+import { RandomGamesStrip } from "@/components/RandomGamesStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,8 @@ export default async function Home({
           </div>
         </div>
       </section>
+
+      <RandomGamesStrip count={8} />
 
       <BrowseControls
         action="/"
