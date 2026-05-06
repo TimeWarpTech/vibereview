@@ -131,6 +131,19 @@ export function normalizePage(value: string | undefined): number {
   return Math.floor(page);
 }
 
+// Bayesian-style score: pulls low-volume ratings toward the global mean so a
+// 5.0 with 2 reviews doesn't outrank a 4.8 with 40 reviews.
+const TOP_RATED_PRIOR_VOTES = 3;
+const TOP_RATED_PRIOR_MEAN = 3.5;
+
+function topRatedScore(reviewCount: number, avgRating: number): number {
+  if (reviewCount <= 0) return 0;
+  return (
+    (reviewCount * avgRating + TOP_RATED_PRIOR_VOTES * TOP_RATED_PRIOR_MEAN) /
+    (reviewCount + TOP_RATED_PRIOR_VOTES)
+  );
+}
+
 export function globalTopRatedRanks(aggMap: Map<string, GameAggregate>): Map<string, number> {
   const reviewed = games
     .map((g) => {
@@ -142,7 +155,12 @@ export function globalTopRatedRanks(aggMap: Map<string, GameAggregate>): Map<str
       };
     })
     .filter((r) => r.reviewCount > 0)
-    .sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount);
+    .sort(
+      (a, b) =>
+        topRatedScore(b.reviewCount, b.avgRating) - topRatedScore(a.reviewCount, a.avgRating) ||
+        b.reviewCount - a.reviewCount ||
+        b.avgRating - a.avgRating,
+    );
   const out = new Map<string, number>();
   reviewed.forEach((r, i) => out.set(r.url, i + 1));
   return out;
@@ -174,7 +192,11 @@ export function buildRankedGames(sp: BrowseSearchParams, aggMap: Map<string, Gam
       return b.reviewCount - a.reviewCount || b.avgRating - a.avgRating;
     }
     if (sort === "top_rated") {
-      return b.avgRating - a.avgRating || b.reviewCount - a.reviewCount;
+      return (
+        topRatedScore(b.reviewCount, b.avgRating) - topRatedScore(a.reviewCount, a.avgRating) ||
+        b.reviewCount - a.reviewCount ||
+        b.avgRating - a.avgRating
+      );
     }
     return gameTimestamp(b.game) - gameTimestamp(a.game);
   });
