@@ -1,20 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGameBySlug } from "@/lib/games";
-import { listReviewsForGame } from "@/lib/reviews";
+import { listReviewsForGame, aggregateForGame } from "@/lib/reviews";
 import { StarRating } from "@/components/StarRating";
-import { ReviewList } from "@/components/ReviewList";
+import { ReviewListInfinite } from "@/components/ReviewListInfinite";
 import { ReviewForm } from "@/components/ReviewForm";
 import { ScreenshotViewer } from "@/components/ScreenshotViewer";
+import { XHandleLink } from "@/components/XHandleLink";
+
+const REVIEWS_PAGE_SIZE = 10;
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
-
-function avg(nums: number[]): number {
-  if (nums.length === 0) return 0;
-  return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10;
-}
 
 function YesNoBadge({ label, value }: { label: string; value: string }) {
   const isYes = value === "Yes";
@@ -33,15 +31,22 @@ export default async function GameDetail({ params }: Props) {
   const game = getGameBySlug(slug);
   if (!game) notFound();
 
-  let reviews: Awaited<ReturnType<typeof listReviewsForGame>> = [];
+  let initialReviews: Awaited<ReturnType<typeof listReviewsForGame>> = [];
+  let totalReviews = 0;
+  let average = 0;
   try {
-    reviews = await listReviewsForGame(game.game_url, { limit: 100 });
+    const [reviews, agg] = await Promise.all([
+      listReviewsForGame(game.game_url, { limit: REVIEWS_PAGE_SIZE }),
+      aggregateForGame(game.game_url),
+    ]);
+    initialReviews = reviews;
+    totalReviews = agg.reviewCount;
+    average = agg.avgRating;
   } catch {
-    reviews = [];
+    initialReviews = [];
+    totalReviews = 0;
+    average = 0;
   }
-
-  const ratings = reviews.map((r) => r.rating);
-  const average = avg(ratings);
 
   return (
     <div className="page-stack">
@@ -67,11 +72,11 @@ export default async function GameDetail({ params }: Props) {
           ) : null}
 
           <div className="button-row">
-            {reviews.length > 0 ? (
+            {totalReviews > 0 ? (
               <>
                 <StarRating value={average} size="md" />
                 <span>
-                  {average.toFixed(1)} - {reviews.length} review{reviews.length === 1 ? "" : "s"}
+                  {average.toFixed(1)} - {totalReviews} review{totalReviews === 1 ? "" : "s"}
                 </span>
               </>
             ) : (
@@ -95,7 +100,7 @@ export default async function GameDetail({ params }: Props) {
             {game.x_username ? (
               <>
                 <dt>Author</dt>
-                <dd>{game.x_username}</dd>
+                <dd><XHandleLink name={game.x_username} /></dd>
               </>
             ) : null}
           </dl>
@@ -116,7 +121,12 @@ export default async function GameDetail({ params }: Props) {
       <section className="detail-bottom">
         <div className="space-y-4">
           <h2 className="section-title">Reviews</h2>
-          <ReviewList reviews={reviews} />
+          <ReviewListInfinite
+            gameUrl={game.game_url}
+            initialItems={initialReviews}
+            total={totalReviews}
+            pageSize={REVIEWS_PAGE_SIZE}
+          />
         </div>
         <div>
           <ReviewForm gameUrl={game.game_url} redirectTo={`/games/${slug}`} />

@@ -91,6 +91,26 @@ export async function listReviewsForGame(
   return docs.map(toView);
 }
 
+export async function countReviewsForGame(gameUrl: string): Promise<number> {
+  const reviews = await getReviewsCollection();
+  return reviews.countDocuments({ gameUrl });
+}
+
+export async function aggregateForGame(
+  gameUrl: string,
+): Promise<{ reviewCount: number; avgRating: number }> {
+  const reviews = await getReviewsCollection();
+  const rows = await reviews
+    .aggregate<{ _id: null; reviewCount: number; avgRating: number }>([
+      { $match: { gameUrl } },
+      { $group: { _id: null, reviewCount: { $sum: 1 }, avgRating: { $avg: "$rating" } } },
+    ])
+    .toArray();
+  const r = rows[0];
+  if (!r) return { reviewCount: 0, avgRating: 0 };
+  return { reviewCount: r.reviewCount, avgRating: Math.round(r.avgRating * 10) / 10 };
+}
+
 export type GameAggregate = {
   gameUrl: string;
   reviewCount: number;

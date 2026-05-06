@@ -1,4 +1,5 @@
-import { changelog, type ChangelogKind } from "@/lib/changelog";
+import { changelog } from "@/lib/changelog";
+import { ChangelogInfinite } from "@/components/ChangelogInfinite";
 import "./changelog.css";
 
 export const metadata = {
@@ -6,11 +7,7 @@ export const metadata = {
   description: "Recent hotfixes, features and tweaks on VibeReview.",
 };
 
-const kindLabel: Record<ChangelogKind, string> = {
-  fix: "hotfix",
-  feature: "feature",
-  tweak: "tweak",
-};
+const PAGE_SIZE = 5;
 
 export default function ChangelogPage() {
   return (
@@ -23,22 +20,7 @@ export default function ChangelogPage() {
       </section>
 
       <section>
-        <ul className="changelog-list">
-          {changelog.map((entry, i) => (
-            <li key={`${entry.date}-${i}`} className="changelog-item">
-              <div className="changelog-item__meta">
-                <span className={`changelog-tag changelog-tag--${entry.kind}`}>
-                  {kindLabel[entry.kind]}
-                </span>
-                <time className="changelog-date" dateTime={entry.date}>
-                  {entry.date}
-                </time>
-              </div>
-              <h2 className="changelog-title">{entry.title}</h2>
-              <p className="changelog-body">{entry.body}</p>
-            </li>
-          ))}
-        </ul>
+        <ChangelogInfinite entries={changelog} pageSize={PAGE_SIZE} />
       </section>
     </div>
   );

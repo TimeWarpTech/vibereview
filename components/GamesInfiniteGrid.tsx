@@ -49,7 +49,17 @@ export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize, 
       const data = await res.json();
       if (!res.ok || !data.ok) return;
 
-      setItems((current) => [...current, ...data.data]);
+      setItems((current) => {
+        const seen = new Set(current.map((r) => r.game.game_url));
+        const merged = [...current];
+        for (const r of data.data as RankedGame[]) {
+          if (!seen.has(r.game.game_url)) {
+            seen.add(r.game.game_url);
+            merged.push(r);
+          }
+        }
+        return merged;
+      });
       setPage(nextPage);
 
       if (typeof window !== "undefined") {

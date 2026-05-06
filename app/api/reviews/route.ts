@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ReviewInputSchema, createReview, listReviewsForGame } from "@/lib/reviews";
+import {
+  ReviewInputSchema,
+  createReview,
+  listReviewsForGame,
+  countReviewsForGame,
+} from "@/lib/reviews";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,6 +80,9 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit") ?? 50), 100);
   const skip = Math.max(Number(req.nextUrl.searchParams.get("skip") ?? 0), 0);
 
-  const reviews = await listReviewsForGame(gameUrl, { limit, skip });
-  return NextResponse.json({ ok: true, data: reviews });
+  const [reviews, total] = await Promise.all([
+    listReviewsForGame(gameUrl, { limit, skip }),
+    countReviewsForGame(gameUrl),
+  ]);
+  return NextResponse.json({ ok: true, data: reviews, total });
 }

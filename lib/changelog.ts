@@ -9,6 +9,36 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-05-06",
+    kind: "tweak",
+    title: "Top Rated weighs review volume",
+    body: "Top Rated now uses a Bayesian average with a light prior — review count acts as a tiebreaker so a 4.8 with many reviews can edge out a 5.0 with very few.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "feature",
+    title: "Author handles link to X",
+    body: "Author names that look like X handles (in game details and reviews) are now clickable links with the X logo, opening the profile in a new tab.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "feature",
+    title: "Changelog with infinite scroll",
+    body: "The changelog page now lazy-loads entries in batches as you scroll.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "feature",
+    title: "Reviews lazy-load with infinite scroll",
+    body: "Game pages now load 10 reviews at a time and fetch more as you scroll, instead of pulling everything up front.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "fix",
+    title: "Fractional star ratings",
+    body: "Star icons now reflect the actual average (e.g. 4.5 shows half a star) and the numeric score is shown next to them, so 4.8 and 5.0 are no longer indistinguishable.",
+  },
+  {
     date: "2026-05-05",
     kind: "fix",
     title: "Top Rated now weighs review volume",

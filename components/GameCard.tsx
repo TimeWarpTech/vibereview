@@ -53,7 +53,7 @@ export function GameCard({ game, reviewCount, avgRating, rank }: Props) {
             {reviewCount > 0 ? (
               <>
                 <StarRating value={avgRating} />
-                <span>({reviewCount})</span>
+                <span>{avgRating.toFixed(1)} ({reviewCount})</span>
               </>
             ) : (
               <span className="opacity-60">no reviews</span>
