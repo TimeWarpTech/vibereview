@@ -1,0 +1,77 @@
+.ranking-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid rgba(120, 220, 255, 0.25);
+  background: rgba(10, 12, 28, 0.6);
+  padding: 1.25rem 1.5rem;
+  border-radius: 6px;
+}
+
+.ranking-section h2 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  margin: 0;
+  color: var(--yellow);
+  letter-spacing: 0.06em;
+}
+
+.ranking-section h3 {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  margin: 0.5rem 0 0;
+  color: #f0f7ff;
+  letter-spacing: 0.05em;
+}
+
+.ranking-section p,
+.ranking-section li {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.45;
+  color: rgba(220, 230, 255, 0.85);
+  margin: 0;
+}
+
+.ranking-section ul,
+.ranking-section ol {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ranking-formula {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px dashed var(--line);
+  padding: 0.85rem 1rem;
+  border-radius: 4px;
+  color: var(--yellow);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+}
+
+.ranking-table th,
+.ranking-table td {
+  border: 1px solid rgba(120, 220, 255, 0.15);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.ranking-table th {
+  background: rgba(255, 211, 61, 0.08);
+  color: var(--yellow);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+}

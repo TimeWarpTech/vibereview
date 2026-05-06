@@ -180,6 +180,43 @@ textarea {
   text-shadow: 0 0 16px rgba(140, 99, 255, 0.5);
 }
 
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero-jam-link {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 211, 61, 0.06);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.hero-jam-link:hover {
+  background: rgba(255, 211, 61, 0.16);
+  border-color: var(--line-strong);
+  color: #fff39a;
+}
+
+.hero-inline-link {
+  color: var(--yellow);
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+}
+
+.hero-inline-link:hover {
+  color: #fff39a;
+}
+
 .site-nav {
   display: flex;
   align-items: center;

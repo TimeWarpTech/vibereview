@@ -10,6 +10,24 @@ export type ChangelogEntry = {
 export const changelog: ChangelogEntry[] = [
   {
     date: "2026-05-06",
+    kind: "feature",
+    title: "Ranking explainer page",
+    body: "Added /how-it-works with a plain-language explanation of the Top Rated formula, a live ranking example, and tiebreaker rules.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "feature",
+    title: "Discover new games strip",
+    body: "Home page now shows 8 random games in a horizontal carousel between the hero and the browse grid, refreshed each load.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "tweak",
+    title: "Neon scrollbars",
+    body: "Custom yellow scrollbars across the site (Firefox + WebKit) to match the arcade theme.",
+  },
+  {
+    date: "2026-05-06",
     kind: "tweak",
     title: "Top Rated weighs review volume",
     body: "Top Rated now uses a Bayesian average with a light prior — review count acts as a tiebreaker so a 4.8 with many reviews can edge out a 5.0 with very few.",

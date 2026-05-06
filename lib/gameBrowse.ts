@@ -133,10 +133,10 @@ export function normalizePage(value: string | undefined): number {
 
 // Top Rated: Bayesian average with a light prior so review volume acts as a
 // tiebreaker between similar ratings (e.g. 4.8 with 10 reviews beats 5.0 with 2).
-const TOP_RATED_PRIOR_VOTES = 2;
-const TOP_RATED_PRIOR_MEAN = 4.0;
+export const TOP_RATED_PRIOR_VOTES = 2;
+export const TOP_RATED_PRIOR_MEAN = 4.0;
 
-function topRatedScore(reviewCount: number, avgRating: number): number {
+export function topRatedScore(reviewCount: number, avgRating: number): number {
   if (reviewCount <= 0) return 0;
   return (
     (reviewCount * avgRating + TOP_RATED_PRIOR_VOTES * TOP_RATED_PRIOR_MEAN) /
