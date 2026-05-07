@@ -32,5 +32,7 @@ export async function ensureIndexes(): Promise<void> {
   await Promise.all([
     reviews.createIndex({ gameUrl: 1, createdAt: -1 }),
     reviews.createIndex({ ipHash: 1, createdAt: -1 }),
+    reviews.createIndex({ clientId: 1, createdAt: -1 }, { sparse: true }),
+    reviews.createIndex({ fpHash: 1, createdAt: -1 }, { sparse: true }),
   ]);
 }

@@ -9,6 +9,30 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Ideas page with voting",
+    body: "New /ideas page where anyone can suggest features and upvote others' ideas. Same anti-abuse layers as reviews (1 idea per 4 days; one vote per user).",
+  },
+  {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Device fingerprint id on reviews",
+    body: "Each review now shows a short fingerprint id (#xxxxxxxx) next to the author so repeat reviewers from the same device are visible at a glance.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Stronger anti-abuse with cookie + fingerprint",
+    body: "Submissions are now identified by IP, an anonymous client cookie and a device fingerprint (canvas, WebGL, audio, fonts, screen). Any of the three triggers the cooldown.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "tweak",
+    title: "Review limit: 1 per game with 4-day cooldown",
+    body: "Tightened from 6 reviews per game per IP to 1, with a sliding 4-day reset window. The form now shows a live countdown for when you can review again.",
+  },
+  {
     date: "2026-05-06",
     kind: "fix",
     title: "X handle linking now requires @",

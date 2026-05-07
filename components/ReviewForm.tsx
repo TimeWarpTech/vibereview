@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { collectFingerprint } from "@/lib/fingerprint";
 
 type Props = { gameUrl: string; redirectTo?: string };
 const ratingStorageKey = (gameUrl: string) => `vibereview:rating:${gameUrl}`;
@@ -15,10 +16,44 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
     const parsed = Number(saved);
     if (parsed >= 1 && parsed <= 5) setRating(parsed);
   }, [gameUrl]);
+
+  const fingerprintRef = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    collectFingerprint()
+      .then((fp) => {
+        if (!cancelled) fingerprintRef.current = fp;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [body, setBody] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [nextAllowedAt, setNextAllowedAt] = useState<Date | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!nextAllowedAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [nextAllowedAt]);
+
+  function formatCooldown(ms: number): string {
+    if (ms <= 0) return "now";
+    const s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  }
 
   function handleRatingSelect(nextRating: number) {
     setError(null);
@@ -48,11 +83,20 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
       const res = await fetch("/api/reviews", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ gameUrl, rating, body: body.trim(), authorName: authorName.trim() || undefined }),
+        body: JSON.stringify({
+          gameUrl,
+          rating,
+          body: body.trim(),
+          authorName: authorName.trim() || undefined,
+          clientFingerprint: fingerprintRef.current ?? undefined,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
         setError(data.error ?? "Something went wrong.");
+        if (data.nextAllowedAt) {
+          setNextAllowedAt(new Date(data.nextAllowedAt));
+        }
         return;
       }
     } catch {
@@ -141,6 +185,11 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
         />
 
         {error ? <p className="form-error">{error}</p> : null}
+        {nextAllowedAt ? (
+          <p className="form-hint">
+            You can review again in {formatCooldown(nextAllowedAt.getTime() - now)}.
+          </p>
+        ) : null}
 
         <div className="form-row">
           <span className="form-hint">{body.length}/2000</span>

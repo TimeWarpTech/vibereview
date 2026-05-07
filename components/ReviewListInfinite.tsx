@@ -93,6 +93,14 @@ export function ReviewListInfinite({ gameUrl, initialItems, total, pageSize }: P
               <div className="review-card__author">
                 <StarRating value={r.rating} />
                 <XHandleLink name={r.authorName} />
+                {r.fpId ? (
+                  <span
+                    className="review-card__fp"
+                    title="Device fingerprint id"
+                  >
+                    #{r.fpId}
+                  </span>
+                ) : null}
               </div>
               <span className="review-card__date">{formatDate(r.createdAt)}</span>
             </div>
