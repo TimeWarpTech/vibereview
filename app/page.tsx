@@ -70,14 +70,6 @@ export default async function Home({
       <section className="hero-panel">
         <div className="hero-title-row">
           <h1 className="pixel-heading">VIBEREVIEW</h1>
-          <a
-            href="https://vibej.am/2026/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hero-jam-link"
-          >
-            ↗ VibeJam 2026
-          </a>
         </div>
         <p className="hero-copy">
           Browse {games.length.toLocaleString()} vibe-coded games from <a href="https://vibej.am/2026/" target="_blank" rel="noopener noreferrer" className="hero-inline-link">VibeJam 2026</a>, track what players actually rated, and drop an anonymous review without ceremony.

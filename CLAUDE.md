@@ -7,7 +7,7 @@ Guidance for Claude Code when working in this repository.
 VibeReview is an anonymous review site for the games in `games.json`. Stack: Next.js (App Router) + MongoDB + Tailwind. No auth — anyone can post a review.
 
 ## Source of truth
-
+ 
 - **Games**: `games.json` at the repo root (945 entries). Treat as read-only. Do not write a script to mutate it. If a schema change is needed, document it in `TASKS.md` and ask first.
 - **Reviews**: MongoDB `reviews` collection. Schema is defined in `README.md` and `lib/mongo.ts`.
 
