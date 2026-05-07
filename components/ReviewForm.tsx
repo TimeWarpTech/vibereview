@@ -20,7 +20,6 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
   const [isPending, startTransition] = useTransition();
 
   function handleRatingSelect(nextRating: number) {
-    console.log("[ReviewForm] rating click", { gameUrl, nextRating });
     setError(null);
     setRating(nextRating);
     window.localStorage.setItem(ratingStorageKey(gameUrl), String(nextRating));

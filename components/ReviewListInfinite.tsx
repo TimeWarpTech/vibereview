@@ -24,6 +24,22 @@ export function ReviewListInfinite({ gameUrl, initialItems, total, pageSize }: P
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const hasMore = items.length < total;
 
+  useEffect(() => {
+    setItems((current) => {
+      const seen = new Set(current.map((r) => r.id));
+      const merged = [...initialItems];
+      const mergedIds = new Set(initialItems.map((r) => r.id));
+      for (const r of current) {
+        if (!mergedIds.has(r.id)) merged.push(r);
+      }
+      const changed =
+        merged.length !== current.length ||
+        merged.some((r, i) => r.id !== current[i]?.id) ||
+        initialItems.some((r) => !seen.has(r.id));
+      return changed ? merged : current;
+    });
+  }, [initialItems]);
+
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMore) return;
     setIsLoading(true);

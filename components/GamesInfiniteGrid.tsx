@@ -18,9 +18,10 @@ type Props = {
   initialPage: number;
   pageSize: number;
   showRank?: boolean;
+  defaultSort?: string;
 };
 
-export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize, showRank = false }: Props) {
+export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize, showRank = false, defaultSort }: Props) {
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(initialPage);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,8 +33,11 @@ export function GamesInfiniteGrid({ initialItems, total, initialPage, pageSize, 
   const apiQuery = useMemo(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    if (defaultSort && !params.get("sort")) {
+      params.set("sort", defaultSort);
+    }
     return params;
-  }, [searchParams]);
+  }, [searchParams, defaultSort]);
 
   const loadNextPage = useCallback(async () => {
     if (isLoading || !hasMore) return;

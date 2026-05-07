@@ -19,6 +19,9 @@ export function XHandleLink({ name }: Props) {
   if (!trimmed || trimmed.toLowerCase() === "anonymous") {
     return <span>{trimmed || "Anonymous"}</span>;
   }
+  if (!trimmed.startsWith("@")) {
+    return <span>{trimmed}</span>;
+  }
   const handle = trimmed.replace(/^@+/, "");
   if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) {
     return <span>{trimmed}</span>;

@@ -135,6 +135,7 @@ export default async function Home({
           initialPage={page}
           pageSize={PAGE_SIZE}
           showRank
+          defaultSort="top_rated"
         />
       </section>
     </div>
