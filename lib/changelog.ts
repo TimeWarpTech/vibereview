@@ -10,6 +10,24 @@ export type ChangelogEntry = {
 export const changelog: ChangelogEntry[] = [
   {
     date: "2026-05-06",
+    kind: "fix",
+    title: "X handle linking now requires @",
+    body: "Author names only become X profile links when prefixed with @ — plain names like \"jorge\" no longer get auto-linked.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "fix",
+    title: "Reviews refresh after posting",
+    body: "After submitting a review, the list now resyncs cleanly instead of getting stuck in a loading loop that required a manual page refresh.",
+  },
+  {
+    date: "2026-05-06",
+    kind: "fix",
+    title: "Top Rated infinite scroll preserves sort",
+    body: "Loading more games on the home page no longer falls back to Newest — subsequent pages now respect the active Top Rated ordering.",
+  },
+  {
+    date: "2026-05-06",
     kind: "feature",
     title: "Ranking explainer page",
     body: "Added /how-it-works with a plain-language explanation of the Top Rated formula, a live ranking example, and tiebreaker rules.",
