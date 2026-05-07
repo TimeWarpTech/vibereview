@@ -1,0 +1,43 @@
+name: Bump version on main
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    if: "!contains(github.event.head_commit.message, 'chore: bump version')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          current=$(cat VERSION | tr -d '[:space:]')
+          IFS='.' read -r major minor patch <<< "$current"
+          patch=$((patch + 1))
+          next="${major}.${minor}.${patch}"
+          echo "$next" > VERSION
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push as Ana
+        env:
+          ANA_NAME: Ana Rodrigues
+          ANA_EMAIL: anapaularozeno1@gmail.com
+        run: |
+          git config user.name "$ANA_NAME"
+          git config user.email "$ANA_EMAIL"
+          git add VERSION
+          if git diff --cached --quiet; then
+            echo "No version change to commit."
+            exit 0
+          fi
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.next }}"
+          git push origin HEAD:main
