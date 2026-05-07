@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReviewView } from "@/lib/reviews";
 import { StarRating } from "./StarRating";
 import { XHandleLink } from "./XHandleLink";
@@ -23,6 +23,37 @@ export function ReviewListInfinite({ gameUrl, initialItems, total, pageSize }: P
   const [isLoading, setIsLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const hasMore = items.length < total;
+
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  function toggleExpand(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  const groups = useMemo(() => {
+    const map = new Map<string, ReviewView[]>();
+    for (const r of items) {
+      const arr = map.get(r.authorKey);
+      if (arr) arr.push(r);
+      else map.set(r.authorKey, [r]);
+    }
+    const list: { key: string; reviews: ReviewView[]; avg: number }[] = [];
+    for (const [key, reviews] of map) {
+      reviews.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      list.push({ key, reviews, avg: Math.round(avg * 10) / 10 });
+    }
+    list.sort(
+      (a, b) =>
+        +new Date(b.reviews[0]!.createdAt) - +new Date(a.reviews[0]!.createdAt),
+    );
+    return list;
+  }, [items]);
+
 
   useEffect(() => {
     setItems((current) => {
@@ -87,26 +118,64 @@ export function ReviewListInfinite({ gameUrl, initialItems, total, pageSize }: P
   return (
     <>
       <ul className="review-list">
-        {items.map((r) => (
-          <li key={r.id} className="review-card">
-            <div className="review-card__top">
-              <div className="review-card__author">
-                <StarRating value={r.rating} />
-                <XHandleLink name={r.authorName} />
-                {r.fpId ? (
-                  <span
-                    className="review-card__fp"
-                    title="Device fingerprint id"
-                  >
-                    #{r.fpId}
-                  </span>
-                ) : null}
+        {groups.map(({ key, reviews, avg }) => {
+          const newest = reviews[0]!;
+          const isGroup = reviews.length > 1;
+          const isOpen = expanded.has(key);
+          const older = reviews.slice(1);
+          return (
+            <li key={key} className="review-card">
+              <div className="review-card__top">
+                <div className="review-card__author">
+                  <StarRating value={avg} />
+                  <XHandleLink name={newest.authorName} />
+                  {newest.fpId ? (
+                    <span className="review-card__fp" title="Device fingerprint id">
+                      #{newest.fpId}
+                    </span>
+                  ) : null}
+                  {isGroup ? (
+                    <span
+                      className="review-card__multi"
+                      title={`Average across ${reviews.length} reviews from this author`}
+                    >
+                      avg {avg}★
+                    </span>
+                  ) : null}
+                </div>
+                <span className="review-card__date">{formatDate(newest.createdAt)}</span>
               </div>
-              <span className="review-card__date">{formatDate(r.createdAt)}</span>
-            </div>
-            <p className="review-card__body whitespace-pre-wrap">{r.body}</p>
-          </li>
-        ))}
+              <p className="review-card__body whitespace-pre-wrap">{newest.body}</p>
+              {isGroup ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(key)}
+                    className="review-card__expand"
+                    aria-expanded={isOpen}
+                  >
+                    {isOpen
+                      ? "Hide previous reviews"
+                      : `Show ${older.length} previous review${older.length === 1 ? "" : "s"}`}
+                  </button>
+                  {isOpen ? (
+                    <ul className="review-tree">
+                      {older.map((r) => (
+                        <li key={r.id} className="review-tree__item">
+                          <div className="review-tree__head">
+                            <StarRating value={r.rating} />
+                            <span className="review-tree__date">{formatDate(r.createdAt)}</span>
+                          </div>
+                          <p className="review-tree__body whitespace-pre-wrap">{r.body}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
       <div ref={sentinelRef} className="infinite-sentinel">
         {hasMore ? (

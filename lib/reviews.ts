@@ -28,7 +28,10 @@ export type ReviewDoc = {
 export type ReviewView = Omit<ReviewDoc, "_id" | "ipHash" | "fpHash" | "clientId"> & {
   id: string;
   fpId: string | null;
+  authorKey: string;
+  authorReviewCount?: number;
 };
+
 
 export function hashIp(ip: string): string {
   const secret = process.env.IP_HASH_SECRET;
@@ -36,6 +39,12 @@ export function hashIp(ip: string): string {
     throw new Error("IP_HASH_SECRET is not set.");
   }
   return createHash("sha256").update(`${secret}:${ip}`).digest("hex");
+}
+
+export function hashClientId(clientId: string): string {
+  const secret = process.env.IP_HASH_SECRET;
+  if (!secret) throw new Error("IP_HASH_SECRET is not set.");
+  return createHash("sha256").update(`cid:${secret}:${clientId}`).digest("hex");
 }
 
 export function hashFingerprint(parts: string): string {
@@ -49,6 +58,7 @@ export function hashFingerprint(parts: string): string {
 export const REVIEW_WINDOW_MS_EXPORT = 4 * 24 * 60 * 60 * 1000;
 
 export function toView(doc: ReviewDoc): ReviewView {
+  const key = doc.fpHash ?? doc.clientId ?? doc.ipHash;
   return {
     id: doc._id!.toHexString(),
     gameUrl: doc.gameUrl,
@@ -57,11 +67,14 @@ export function toView(doc: ReviewDoc): ReviewView {
     authorName: doc.authorName,
     createdAt: doc.createdAt,
     fpId: doc.fpHash ? doc.fpHash.slice(0, 8) : null,
+    authorKey: key.slice(0, 16),
   };
 }
 
-const REVIEWS_PER_GAME_PER_IP = 1;
-const REVIEW_WINDOW_MS = 4 * 24 * 60 * 60 * 1000;
+// Author key for de-duplicating multi-post abuse: prefer fpHash, then clientId, then ipHash.
+const AUTHOR_KEY_EXPR = {
+  $ifNull: ["$fpHash", { $ifNull: ["$clientId", "$ipHash"] }],
+};
 
 export async function createReview(
   input: ReviewInput,
@@ -77,31 +90,7 @@ export async function createReview(
   const reviews = await getReviewsCollection();
   const ipHash = hashIp(identity.ip);
   const fpHash = identity.fingerprint ? hashFingerprint(identity.fingerprint) : undefined;
-
-  const since = new Date(Date.now() - REVIEW_WINDOW_MS);
-  const orFilters: Record<string, unknown>[] = [{ ipHash }];
-  if (identity.clientId) orFilters.push({ clientId: identity.clientId });
-  if (fpHash) orFilters.push({ fpHash });
-
-  const conflicting = await reviews
-    .find({
-      gameUrl: input.gameUrl,
-      createdAt: { $gte: since },
-      $or: orFilters,
-    })
-    .sort({ createdAt: 1 })
-    .limit(1)
-    .toArray();
-
-  if (conflicting.length >= REVIEWS_PER_GAME_PER_IP) {
-    const oldest = conflicting[0]!.createdAt;
-    const nextAllowedAt = new Date(oldest.getTime() + REVIEW_WINDOW_MS);
-    return {
-      ok: false,
-      error: "You have already reviewed this game recently.",
-      nextAllowedAt,
-    };
-  }
+  const cidHash = identity.clientId ? hashClientId(identity.clientId) : undefined;
 
   const doc: ReviewDoc = {
     gameUrl: input.gameUrl,
@@ -110,7 +99,7 @@ export async function createReview(
     authorName: input.authorName?.trim() || "Anonymous",
     createdAt: new Date(),
     ipHash,
-    ...(identity.clientId ? { clientId: identity.clientId } : {}),
+    ...(cidHash ? { clientId: cidHash } : {}),
     ...(fpHash ? { fpHash } : {}),
   };
   const result = await reviews.insertOne(doc);
@@ -128,7 +117,24 @@ export async function listReviewsForGame(
     .skip(opts.skip ?? 0)
     .limit(opts.limit ?? 50)
     .toArray();
-  return docs.map(toView);
+
+  // Count reviews per author for this game so the UI can show ×N badges.
+  const counts = await reviews
+    .aggregate<{ _id: string; count: number }>([
+      { $match: { gameUrl } },
+      { $group: { _id: AUTHOR_KEY_EXPR, count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+    ])
+    .toArray();
+  const countByKey = new Map(counts.map((c) => [c._id, c.count]));
+
+  return docs.map((doc) => {
+    const key = doc.fpHash ?? doc.clientId ?? doc.ipHash;
+    const count = countByKey.get(key);
+    const view = toView(doc);
+    if (count && count > 1) view.authorReviewCount = count;
+    return view;
+  });
 }
 
 export async function countReviewsForGame(gameUrl: string): Promise<number> {
@@ -138,17 +144,40 @@ export async function countReviewsForGame(gameUrl: string): Promise<number> {
 
 export async function aggregateForGame(
   gameUrl: string,
-): Promise<{ reviewCount: number; avgRating: number }> {
+): Promise<{ reviewCount: number; avgRating: number; rawCount: number }> {
   const reviews = await getReviewsCollection();
   const rows = await reviews
-    .aggregate<{ _id: null; reviewCount: number; avgRating: number }>([
+    .aggregate<{
+      _id: null;
+      reviewCount: number;
+      avgRating: number;
+      rawCount: number;
+    }>([
       { $match: { gameUrl } },
-      { $group: { _id: null, reviewCount: { $sum: 1 }, avgRating: { $avg: "$rating" } } },
+      {
+        $group: {
+          _id: AUTHOR_KEY_EXPR,
+          authorAvg: { $avg: "$rating" },
+          authorReviews: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          reviewCount: { $sum: 1 },
+          avgRating: { $avg: "$authorAvg" },
+          rawCount: { $sum: "$authorReviews" },
+        },
+      },
     ])
     .toArray();
   const r = rows[0];
-  if (!r) return { reviewCount: 0, avgRating: 0 };
-  return { reviewCount: r.reviewCount, avgRating: Math.round(r.avgRating * 10) / 10 };
+  if (!r) return { reviewCount: 0, avgRating: 0, rawCount: 0 };
+  return {
+    reviewCount: r.reviewCount,
+    avgRating: Math.round(r.avgRating * 10) / 10,
+    rawCount: r.rawCount,
+  };
 }
 
 export type GameAggregate = {
@@ -177,10 +206,17 @@ export async function aggregateByGame(): Promise<Map<string, GameAggregate>> {
     }>([
       {
         $group: {
-          _id: "$gameUrl",
+          _id: { gameUrl: "$gameUrl", author: AUTHOR_KEY_EXPR },
+          authorAvg: { $avg: "$rating" },
+          authorLast: { $max: "$createdAt" },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.gameUrl",
           reviewCount: { $sum: 1 },
-          avgRating: { $avg: "$rating" },
-          lastReviewedAt: { $max: "$createdAt" },
+          avgRating: { $avg: "$authorAvg" },
+          lastReviewedAt: { $max: "$authorLast" },
         },
       },
     ])

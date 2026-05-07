@@ -1173,6 +1173,82 @@ textarea {
   cursor: help;
 }
 
+.review-card__expand {
+  margin-top: 0.6rem;
+  background: transparent;
+  border: 0;
+  color: #ff9f43;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  padding: 0.15rem 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.review-card__expand:hover {
+  color: #ffb066;
+}
+
+.review-tree {
+  list-style: none;
+  margin: 0.6rem 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.review-tree__item {
+  position: relative;
+  padding: 0.4rem 0 0.4rem 1.1rem;
+  border-left: 2px solid rgba(255, 159, 67, 0.35);
+}
+
+.review-tree__item::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 0.85rem;
+  width: 0.7rem;
+  height: 2px;
+  background: rgba(255, 159, 67, 0.35);
+}
+
+.review-tree__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+}
+
+.review-tree__date {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.review-tree__body {
+  margin: 0.3rem 0 0 0;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  color: #f2edff;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.review-card__multi {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ff9f43;
+  background: rgba(255, 159, 67, 0.12);
+  border: 1px solid rgba(255, 159, 67, 0.4);
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: help;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

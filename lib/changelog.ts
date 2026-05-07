@@ -10,6 +10,24 @@ export type ChangelogEntry = {
 export const changelog: ChangelogEntry[] = [
   {
     date: "2026-05-07",
+    kind: "tweak",
+    title: "How it works: anti-abuse + per-author averaging documented",
+    body: "Two new sections on /how-it-works explain how reviews from the same author are collapsed into a single vote, and how authors are identified anonymously through device fingerprint → client cookie → IP.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Author tree view on review cards",
+    body: "Reviews from the same author are grouped into one card showing the average rating, the most recent review body, and a 'Show N previous reviews' expander that opens a tree view of the rest.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Ratings averaged per author",
+    body: "Game ratings now group reviews by author identity (fingerprint → cookie → IP) before averaging, so an abuser posting six 5★ reviews counts the same as one. Per-IP review limit removed — anyone can post freely; spam can no longer game the score.",
+  },
+  {
+    date: "2026-05-07",
     kind: "feature",
     title: "Ideas page with voting",
     body: "New /ideas page where anyone can suggest features and upvote others' ideas. Same anti-abuse layers as reviews (1 idea per 4 days; one vote per user).",

@@ -108,6 +108,67 @@ m   = prior mean (${TOP_RATED_PRIOR_MEAN.toFixed(1)})`}
       </section>
 
       <section className="ranking-section">
+        <h2>One author, one vote</h2>
+        <p>
+          Anyone can post as many reviews as they want — but for the rating that
+          matters (the average shown on the game page), all reviews from the
+          same author are <strong>collapsed into a single vote</strong> using
+          their own internal average. So six 5★ reviews from one person count
+          the same as one 5★ review.
+        </p>
+        <p>
+          This means the rating is resistant to spam: posting the same review
+          ten times doesn&apos;t move the needle. It also means a single
+          determined troll can&apos;t tank a game by spamming 1★ — they get one
+          1★ vote, not ten.
+        </p>
+        <div className="ranking-formula">
+{`per_game_average
+  = average over distinct authors
+      of (each author's own average)`}
+        </div>
+        <p>
+          On the game page, multi-review authors show up as a single card with
+          the average of their own ratings up top, the most recent review
+          below, and a &quot;Show N previous reviews&quot; expander that opens a
+          tree view of the rest.
+        </p>
+      </section>
+
+      <section className="ranking-section">
+        <h2>Identifying authors</h2>
+        <p>
+          Anonymity is a product requirement — there&apos;s no login. To
+          identify the same person across reviews without an account, three
+          signals are combined, in order of strength:
+        </p>
+        <ol>
+          <li>
+            <strong>Device fingerprint</strong> — a SHA-256 hash of canvas
+            rendering, WebGL renderer/vendor, OfflineAudioContext output,
+            installed font probes, screen, timezone and user-agent. Stable
+            across cookie clears, browser restarts, and most VPN switches.
+          </li>
+          <li>
+            <strong>Anonymous client cookie</strong> — a random UUID stored in
+            an <code>httpOnly</code> cookie (<code>vr_uid</code>) for one year.
+            Survives IP changes; cleared when the user wipes cookies.
+          </li>
+          <li>
+            <strong>IP hash</strong> — SHA-256 of the request IP plus a server
+            secret. Raw IPs are never stored. Last-resort signal — shared
+            networks (campus Wi-Fi, mobile carriers) collapse onto one hash.
+          </li>
+        </ol>
+        <p>
+          For grouping, the strongest available signal wins:{" "}
+          <code>fingerprint → cookie → ip</code>. Each review carries an
+          opaque, truncated fingerprint id (e.g. <code>#a1b2c3d4</code>) shown
+          on the card so repeat authors are visible at a glance.
+        </p>
+      </section>
+
+      <section className="ranking-section">
         <h2>Tiebreakers</h2>
         <ol>
           <li>Higher Bayesian score wins.</li>

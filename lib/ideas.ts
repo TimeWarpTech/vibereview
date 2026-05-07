@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ObjectId } from "mongodb";
 import { getDb } from "./mongo";
-import { hashIp, hashFingerprint } from "./reviews";
+import { hashIp, hashFingerprint, hashClientId } from "./reviews";
 
 export const IdeaInputSchema = z.object({
   body: z.string().trim().min(5).max(1000),
@@ -64,7 +64,7 @@ export async function ensureIdeaIndexes(): Promise<void> {
 function voterKey(identity: { ip: string; clientId?: string; fingerprint?: string }): string {
   const parts = [
     `ip:${hashIp(identity.ip)}`,
-    identity.clientId ? `c:${identity.clientId}` : "",
+    identity.clientId ? `c:${hashClientId(identity.clientId)}` : "",
     identity.fingerprint ? `f:${hashFingerprint(identity.fingerprint)}` : "",
   ].filter(Boolean);
   return parts.join("|");
@@ -109,10 +109,11 @@ export async function createIdea(
   const ideas = await ideasCollection();
   const ipHash = hashIp(identity.ip);
   const fpHash = identity.fingerprint ? hashFingerprint(identity.fingerprint) : undefined;
+  const cidHash = identity.clientId ? hashClientId(identity.clientId) : undefined;
 
   const since = new Date(Date.now() - IDEAS_PER_USER_WINDOW_MS);
   const orFilters: Record<string, unknown>[] = [{ ipHash }];
-  if (identity.clientId) orFilters.push({ clientId: identity.clientId });
+  if (cidHash) orFilters.push({ clientId: cidHash });
   if (fpHash) orFilters.push({ fpHash });
 
   const conflicting = await ideas
@@ -135,7 +136,7 @@ export async function createIdea(
     authorName: input.authorName?.trim() || "Anonymous",
     createdAt: new Date(),
     ipHash,
-    ...(identity.clientId ? { clientId: identity.clientId } : {}),
+    ...(cidHash ? { clientId: cidHash } : {}),
     ...(fpHash ? { fpHash } : {}),
     status: "new",
     votes: 0,
