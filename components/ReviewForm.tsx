@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 type Props = { gameUrl: string; redirectTo?: string };
@@ -8,12 +8,13 @@ const ratingStorageKey = (gameUrl: string) => `vibereview:rating:${gameUrl}`;
 
 export function ReviewForm({ gameUrl, redirectTo }: Props) {
   const router = useRouter();
-  const [rating, setRating] = useState(() => {
-    if (typeof window === "undefined") return 0;
+  const [rating, setRating] = useState(0);
+
+  useEffect(() => {
     const saved = window.localStorage.getItem(ratingStorageKey(gameUrl));
     const parsed = Number(saved);
-    return parsed >= 1 && parsed <= 5 ? parsed : 0;
-  });
+    if (parsed >= 1 && parsed <= 5) setRating(parsed);
+  }, [gameUrl]);
   const [body, setBody] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [error, setError] = useState<string | null>(null);
