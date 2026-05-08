@@ -133,7 +133,7 @@ export function normalizePage(value: string | undefined): number {
 
 // Top Rated: Bayesian average with a light prior so review volume acts as a
 // tiebreaker between similar ratings (e.g. 4.8 with 10 reviews beats 5.0 with 2).
-export const TOP_RATED_PRIOR_VOTES = 2;
+export const TOP_RATED_PRIOR_VOTES = 5;
 export const TOP_RATED_PRIOR_MEAN = 4.0;
 
 export function topRatedScore(reviewCount: number, avgRating: number): number {
@@ -177,8 +177,6 @@ export function buildRankedGames(sp: BrowseSearchParams, aggMap: Map<string, Gam
   const selectedMadeWith = getSelectedMadeWith(sp.made_with);
   const sort = sp.sort ?? "newest";
   const minRating = parseMinRating(sp.min_rating);
-  const ranks = globalTopRatedRanks(aggMap);
-
   const ranked = games
     .filter((g) => matchesFilters(g, sp, selectedGenres, selectedMadeWith))
     .map((g) => {
@@ -188,7 +186,7 @@ export function buildRankedGames(sp: BrowseSearchParams, aggMap: Map<string, Gam
         reviewCount: a?.reviewCount ?? 0,
         avgRating: a?.avgRating ?? 0,
         lastReviewedAt: a?.lastReviewedAt ?? null,
-        rank: ranks.get(g.game_url),
+        rank: undefined as number | undefined,
       };
     })
     .filter((r) => (minRating > 0 ? r.reviewCount > 0 && r.avgRating >= minRating : true));
@@ -201,6 +199,10 @@ export function buildRankedGames(sp: BrowseSearchParams, aggMap: Map<string, Gam
       return compareTopRated(a, b);
     }
     return gameTimestamp(b.game) - gameTimestamp(a.game);
+  });
+
+  ranked.forEach((r, i) => {
+    r.rank = i + 1;
   });
 
   return ranked;
