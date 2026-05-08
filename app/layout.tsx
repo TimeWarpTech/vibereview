@@ -34,12 +34,31 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/how-it-works" className="site-nav__link">how it works</Link>
               <Link href="/ideas" className="site-nav__link">ideas</Link>
               <Link href="/changelog" className="site-nav__link">changelog</Link>
+              <a
+                href="https://github.com/TimeWarpTech/vibereview"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="site-nav__link"
+              >
+                github
+              </a>
             </nav>
           </div>
         </header>
         <main className="site-main">{children}</main>
         <footer className="site-footer">
-          <div className="site-footer__box">anonymous arcade reviews. no login. no avatars. just signal.</div>
+          <div className="site-footer__box">
+            anonymous arcade reviews. no login. no avatars. just signal.
+            {" "}
+            <a
+              href="https://github.com/TimeWarpTech/vibereview"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="site-footer__link"
+            >
+              open source on github →
+            </a>
+          </div>
         </footer>
       </body>
     </html>
