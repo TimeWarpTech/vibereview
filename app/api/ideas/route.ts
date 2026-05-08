@@ -1,5 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { IdeaInputSchema, createIdea, listIdeas, countIdeas } from "@/lib/ideas";
+import {
+  IdeaInputSchema,
+  createIdea,
+  listIdeas,
+  countIdeas,
+  type IdeaVerdictFilter,
+} from "@/lib/ideas";
+
+const VERDICT_FILTERS = new Set<IdeaVerdictFilter>([
+  "all",
+  "none",
+  "accepted",
+  "rejected",
+  "planned",
+  "shipped",
+]);
+
+function parseVerdictFilter(value: string | null): IdeaVerdictFilter {
+  if (value && VERDICT_FILTERS.has(value as IdeaVerdictFilter)) {
+    return value as IdeaVerdictFilter;
+  }
+  return "all";
+}
 import {
   attachClientCookie,
   clientIp,
@@ -62,13 +84,14 @@ export async function GET(req: NextRequest) {
   const sort = req.nextUrl.searchParams.get("sort") === "new" ? "new" : "top";
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit") ?? 100), 200);
   const skip = Math.max(Number(req.nextUrl.searchParams.get("skip") ?? 0), 0);
+  const verdict = parseVerdictFilter(req.nextUrl.searchParams.get("verdict"));
   const { clientId, isNew } = getOrCreateClientId(req);
   const [ideas, total] = await Promise.all([
     listIdeas(
       { ip: clientIp(req), clientId, fingerprint: combinedFingerprint(req) },
-      { sort, limit, skip },
+      { sort, limit, skip, verdict },
     ),
-    countIdeas(),
+    countIdeas(verdict),
   ]);
   const res = NextResponse.json({ ok: true, data: ideas, total });
   if (isNew) attachClientCookie(res, clientId);

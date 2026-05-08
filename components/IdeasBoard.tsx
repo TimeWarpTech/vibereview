@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { collectFingerprint } from "@/lib/fingerprint";
-import type { IdeaView } from "@/lib/ideas";
+import type { IdeaView, IdeaVerdictFilter } from "@/lib/ideas";
+
+const VERDICT_TABS: { value: IdeaVerdictFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "accepted", label: "Accepted" },
+  { value: "shipped", label: "Shipped" },
+  { value: "planned", label: "Planned" },
+  { value: "rejected", label: "Rejected" },
+  { value: "none", label: "Open" },
+];
 
 type Props = { initialIdeas: IdeaView[]; initialTotal: number; pageSize: number };
 
@@ -36,6 +45,7 @@ export function IdeasBoard({ initialIdeas, initialTotal, pageSize }: Props) {
   const [nextAllowedAt, setNextAllowedAt] = useState<Date | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const [sort, setSort] = useState<"top" | "new">("top");
+  const [verdictFilter, setVerdictFilter] = useState<IdeaVerdictFilter>("all");
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -78,7 +88,7 @@ export function IdeasBoard({ initialIdeas, initialTotal, pageSize }: Props) {
       return;
     }
     let cancelled = false;
-    fetch(`/api/ideas?sort=${sort}&limit=${pageSize}&skip=0`)
+    fetch(`/api/ideas?sort=${sort}&verdict=${verdictFilter}&limit=${pageSize}&skip=0`)
       .then((r) => r.json())
       .then((data) => {
         if (!cancelled && data?.ok) {
@@ -90,7 +100,7 @@ export function IdeasBoard({ initialIdeas, initialTotal, pageSize }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [sort, pageSize]);
+  }, [sort, verdictFilter, pageSize]);
 
   const hasMore = ideas.length < total;
   const loadMore = useCallback(async () => {
@@ -99,6 +109,7 @@ export function IdeasBoard({ initialIdeas, initialTotal, pageSize }: Props) {
     try {
       const params = new URLSearchParams({
         sort,
+        verdict: verdictFilter,
         skip: String(ideas.length),
         limit: String(pageSize),
       });
@@ -120,7 +131,7 @@ export function IdeasBoard({ initialIdeas, initialTotal, pageSize }: Props) {
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loadingMore, ideas.length, pageSize, sort]);
+  }, [hasMore, loadingMore, ideas.length, pageSize, sort, verdictFilter]);
 
   useEffect(() => {
     if (!hasMore || loadingMore || !sentinelRef.current) return;
@@ -260,6 +271,20 @@ export function IdeasBoard({ initialIdeas, initialTotal, pageSize }: Props) {
             >
               New
             </button>
+          </div>
+          <div className="ideas-sort" role="tablist" aria-label="Filter by verdict">
+            {VERDICT_TABS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                role="tab"
+                aria-selected={verdictFilter === t.value}
+                onClick={() => setVerdictFilter(t.value)}
+                className={`ideas-sort__tab ${verdictFilter === t.value ? "ideas-sort__tab--active" : ""}`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
           <button
             type="button"

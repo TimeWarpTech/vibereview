@@ -147,20 +147,33 @@ export async function createIdea(
   return { ok: true, idea: toView({ ...doc, _id: result.insertedId }, voterKey(identity)) };
 }
 
-export async function countIdeas(): Promise<number> {
+export type IdeaVerdictFilter = "all" | "none" | IdeaVerdict;
+
+function verdictFilter(filter: IdeaVerdictFilter | undefined): Record<string, unknown> {
+  if (!filter || filter === "all") return {};
+  if (filter === "none") return { $or: [{ verdict: null }, { verdict: { $exists: false } }] };
+  return { verdict: filter };
+}
+
+export async function countIdeas(filter?: IdeaVerdictFilter): Promise<number> {
   const ideas = await ideasCollection();
-  return ideas.countDocuments({});
+  return ideas.countDocuments(verdictFilter(filter));
 }
 
 export async function listIdeas(
   identity: { ip: string; clientId?: string; fingerprint?: string },
-  opts: { sort?: "top" | "new"; limit?: number; skip?: number } = {},
+  opts: {
+    sort?: "top" | "new";
+    limit?: number;
+    skip?: number;
+    verdict?: IdeaVerdictFilter;
+  } = {},
 ): Promise<IdeaView[]> {
   const ideas = await ideasCollection();
   const sortSpec: Record<string, 1 | -1> =
     opts.sort === "new" ? { createdAt: -1 } : { votes: -1, createdAt: -1 };
   const docs = await ideas
-    .find({})
+    .find(verdictFilter(opts.verdict))
     .sort(sortSpec)
     .skip(opts.skip ?? 0)
     .limit(opts.limit ?? 100)
