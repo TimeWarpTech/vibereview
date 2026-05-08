@@ -5,12 +5,14 @@ for (const line of readFileSync(".env", "utf8").split(/\r?\n/)) {
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^"|"$/g, "");
 }
 
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB || "vibereview";
-const gameUrl = "https://emoji-beats.vercel.app";
+const gameUrl = process.argv[2];
+if (!gameUrl) {
+  console.error("Usage: node scripts/inspect-reviews.mjs <gameUrl>");
+  process.exit(1);
+}
 
-const client = await new MongoClient(uri).connect();
-const db = client.db(dbName);
+const client = await new MongoClient(process.env.MONGODB_URI).connect();
+const db = client.db(process.env.MONGODB_DB || "vibereview");
 const reviews = await db
   .collection("reviews")
   .find({ gameUrl })

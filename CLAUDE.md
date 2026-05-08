@@ -39,6 +39,21 @@ npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 ```
 
+## Scripts
+
+DB scripts read `MONGODB_URI` / `MONGODB_DB` from `.env`. Run from repo root.
+
+```bash
+node scripts/list-ideas.mjs                         # list all ideas (id, author, votes, body)
+node scripts/set-verdict.mjs <ideaId> <verdict>     # set verdict (e.g. accepted, rejected)
+node scripts/delete-idea.mjs <ideaId>               # delete an idea by _id
+node scripts/inspect-reviews.mjs <gameUrl>          # reviews + duplicate ip/fp groups for a game
+node scripts/inspect-game.mjs <gameUrl>             # compact review listing for a game
+node scripts/check-aggregate.mjs <gameUrl>          # compare raw vs per-author average rating
+
+scripts/commit-as-ana.sh "msg" [-- <paths>]         # git commit authored as Ana Rodrigues
+```
+
 ## When in doubt
 
 Check `TASKS.md` for the current work breakdown. If the task isn't listed there, ask before adding scope.
