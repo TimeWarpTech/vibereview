@@ -40,7 +40,7 @@ export default async function GameDetail({ params }: Props) {
       aggregateForGame(game.game_url),
     ]);
     initialReviews = reviews;
-    totalReviews = agg.reviewCount;
+    totalReviews = agg.rawCount;
     average = agg.avgRating;
   } catch {
     initialReviews = [];
