@@ -11,6 +11,30 @@ export const changelog: ChangelogEntry[] = [
   {
     date: "2026-05-07",
     kind: "tweak",
+    title: "Top Rated prior raised: review volume now matters more",
+    body: "The Bayesian prior on Top Rated went from 2 phantom votes to 5. A 5★ with 2–3 reviews no longer dominates the front page — it has to share the top with games that have real review volume backing a slightly lower average.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "fix",
+    title: "Card rank numbers now follow the active sort",
+    body: "The #1, #2… badges on the home grid used to always show each game's Top Rated position regardless of which sort was active. They now reflect the position in the visible list, so #1 is always the first card you see.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Verdict filter on the Ideas page",
+    body: "Filter ideas by verdict (All / Accepted / Shipped / Planned / Rejected / Open). Pagination and sort respect the filter. Server-side, so counts and infinite scroll stay accurate.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "feature",
+    title: "Review form remembers your name",
+    body: "Type your name once and it's pre-filled on every future review on this device (localStorage). Stays after submitting so you don't have to retype it.",
+  },
+  {
+    date: "2026-05-07",
+    kind: "tweak",
     title: "How it works: anti-abuse + per-author averaging documented",
     body: "Two new sections on /how-it-works explain how reviews from the same author are collapsed into a single vote, and how authors are identified anonymously through device fingerprint → client cookie → IP.",
   },

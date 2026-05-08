@@ -61,8 +61,10 @@ m   = prior mean (${TOP_RATED_PRIOR_MEAN.toFixed(1)})`}
         <p>
           With <strong>k = {TOP_RATED_PRIOR_VOTES}</strong> and{" "}
           <strong>m = {TOP_RATED_PRIOR_MEAN.toFixed(1)}</strong>, the prior is
-          light. It only matters when review counts are small. Once a game has
-          ~10+ reviews, the score is essentially the real average.
+          moderate. A game with very few reviews is pulled noticeably toward the
+          neutral score; once a game crosses ~15+ reviews, the score is mostly
+          the real average. This stops a 5.0 with 2 reviews from squatting at #1
+          while still letting genuinely better-rated games beat noisier ones.
         </p>
       </section>
 
@@ -189,6 +191,17 @@ m   = prior mean (${TOP_RATED_PRIOR_MEAN.toFixed(1)})`}
             the tiebreaker.
           </li>
         </ul>
+      </section>
+
+      <section className="ranking-section">
+        <h2>Card rank numbers</h2>
+        <p>
+          The <code>#1</code>, <code>#2</code>… badges on each card reflect the
+          position in the <em>currently visible list</em>, after filters and the
+          active sort have been applied. Switch from Top Rated to Newest and the
+          numbers renumber to match what you actually see — they&apos;re a
+          position indicator, not a permanent badge.
+        </p>
       </section>
 
       <section className="ranking-section">
