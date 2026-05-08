@@ -6,6 +6,7 @@ import { collectFingerprint } from "@/lib/fingerprint";
 
 type Props = { gameUrl: string; redirectTo?: string };
 const ratingStorageKey = (gameUrl: string) => `vibereview:rating:${gameUrl}`;
+const authorNameStorageKey = "vibereview:authorName";
 
 export function ReviewForm({ gameUrl, redirectTo }: Props) {
   const router = useRouter();
@@ -31,6 +32,18 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
   }, []);
   const [body, setBody] = useState("");
   const [authorName, setAuthorName] = useState("");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(authorNameStorageKey);
+    if (saved) setAuthorName(saved);
+  }, []);
+
+  function handleAuthorNameChange(value: string) {
+    setAuthorName(value);
+    const trimmed = value.trim();
+    if (trimmed) window.localStorage.setItem(authorNameStorageKey, trimmed);
+    else window.localStorage.removeItem(authorNameStorageKey);
+  }
   const [error, setError] = useState<string | null>(null);
   const [nextAllowedAt, setNextAllowedAt] = useState<Date | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
@@ -105,7 +118,6 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
     }
 
     setBody("");
-    setAuthorName("");
     startTransition(() => router.refresh());
   }
 
@@ -158,7 +170,7 @@ export function ReviewForm({ gameUrl, redirectTo }: Props) {
           type="text"
           name="authorName"
           value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
+          onChange={(e) => handleAuthorNameChange(e.target.value)}
           placeholder="Your name (optional)"
           maxLength={60}
           className="retro-input"
